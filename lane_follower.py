@@ -171,8 +171,6 @@ video.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
 time.sleep(1)
 lastTime = 0
 
-kp = 0.4
-kd = kp * 0.65
 
 while True:
     ret, frame = video.read()
@@ -187,9 +185,6 @@ while True:
     steering_angle = get_steering_angle(frame, lane_lines)
     heading_image = display_heading_line(lane_lines_image, steering_angle)
     cv2.imshow("heading line", heading_image)
-
-    now = time.time()
-    dt = now - lastTime
 
     deviation = steering_angle - 90
     error = abs(deviation)
@@ -206,7 +201,6 @@ while True:
         print("steer left if the deviation is positive")
 
     lastError = error
-    lastTime = time.time()
     key = cv2.waitKey(1)
     if key == 27:
         break
