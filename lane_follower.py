@@ -7,6 +7,11 @@ curr_steering_angle = 90
 
 
 def detect_edges(frame):
+    """
+    Convert BGR image to HSV
+    'Lift' all the blueish colors from the image by specifying a range of color Blue
+    Use blue mask and Canny edge detection to detect edges in the image
+    """
     # filter for blue lane lines
     hsv = cvtColor(frame, COLOR_BGR2HSV)
     lower_blue = array([30, 40, 0], dtype="uint8")
@@ -31,6 +36,11 @@ def detect_red_edges(frame):
 
 
 def region_of_interest(edges):
+    """
+    Crop out the top half of the image
+    Create a mask for the bottom half of the screen
+    Merge the mask with the edges image
+    """
     height, width = edges.shape  # extract the height and width of the edges frame
     mask = zeros_like(edges)  # make an empty matrix with same dimensions of the edges frame
 
@@ -52,6 +62,9 @@ def region_of_interest(edges):
 
 
 def detect_line_segments(cropped_edges):
+    """
+    Extract the coordinates of detected lines using the Hough Transform
+    """
     rho = 1  # the the distance precision in pixels
     theta = pi / 180  # angular precision in radians
     min_threshold = 10  # minimum vote it should get for it to be considered as a line
@@ -62,9 +75,17 @@ def detect_line_segments(cropped_edges):
     return line_segments
 
 
-# takes the frame under processing and lane segments detected using
-# Hough transform and returns the average slope and intercept of two lane lines
 def average_slope_intercept(frame, line_segments):
+    """
+    Take coordinates of lines (x1, y1, x2, y2)
+    Classify lines by their slopes
+    Left lane should be upward sloping and right on should be downward
+    Take the average of the slopes and intercepts of the lines segments
+    to get the slopes and intercepts of the left and right lane lines
+    Function combines line segments into one or two lane lines
+    If all line slopes are < 0: then we only have detected left lane
+    If all line slopes are > 0: then we only have detected right lane
+    """
     lane_lines = []
 
     if line_segments is None or len(line_segments) == 2:
@@ -107,10 +128,12 @@ def average_slope_intercept(frame, line_segments):
     return lane_lines
 
 
-# helper function for average_slope_intercept() function which will return
-# the bounded coordinates of the lane lines
-# (from the bottom to # the middle of the frame)
 def make_points(frame, line):
+    """
+    helper function for the average_slope_intercept function
+    take a line's slope and intercept
+    return the endpoints of the line segment
+    """
     height, width, _ = frame.shape
 
     slope, intercept = line
@@ -127,8 +150,10 @@ def make_points(frame, line):
     return [[x1, y1, x2, y2]]
 
 
-# display the lane lines on the frames
 def display_lines(frame, lines, line_color=(0, 255, 0), line_width=6):
+    """
+    plot lane lines on the top of the original video frame
+    """
     line_image = zeros_like(frame)
 
     if lines is not None:
@@ -146,6 +171,10 @@ def display_lines(frame, lines, line_color=(0, 255, 0), line_width=6):
 # If steering_angle > 90, the car should steer to right otherwise
 # it should steer left
 def display_heading_line(frame, steering_angle, line_color=(0, 0, 255), line_width=5):
+    """
+    If 2 lines detected compute the heading direction by averaging the far endpoints of both lines
+    If one lane line - set the heading to be he same slope as the only lane line
+    """
     heading_image = zeros_like(frame)
     height, width, _ = frame.shape
 
@@ -164,6 +193,16 @@ def display_heading_line(frame, steering_angle, line_color=(0, 0, 255), line_wid
 
 
 def get_steering_angle(frame, lane_lines):
+    """
+    Figure out the heading line from steering angle
+    heading line (x1,y1) is always center bottom of the screen
+    (x2, y2) requires a bit of trigonometry
+
+    the steering angle of:
+    0-89 degree: turn left
+    90 degree: going straight
+    91-180 degree: turn right
+    """
     height, width, _ = frame.shape
 
     if len(lane_lines) == 2:  # if two lane lines are detected
@@ -247,11 +286,11 @@ def detect_lane(frame):
 
 
 def print_steering(angle):
-    if angle < 90:
+    if angle < 80:
         print("Steer left")
-    elif angle == 90:
+    elif angle>80 and angle < 100:
         print("Go straight!")
-    elif angle > 90:
+    elif angle > 100:
         print("Steer right")
 
 
